@@ -16,18 +16,22 @@ LR = 0.001
 
 # i think I'll use pytorch to make the neural network
 class LinearQNet(nn.Module):
-    def __init__(self, input_size=3, hidden_size=4, output_size=1):
+    def __init__(self, input_size=3, hidden_size=98, output_size=1):
         super().__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, hidden_size)
+        self.linear4 = nn.Linear(hidden_size, output_size)
 
     def forward(self, input): #required for pytorch
         hidden_out = F.relu(self.linear1(input))
-        output_out = self.linear2(hidden_out)
+        hidden_out = F.relu(self.linear2(hidden_out))
+        hidden_out = F.relu(self.linear3(hidden_out))
+        output_out = self.linear4(hidden_out)
         return output_out
 
 class QTrainer:
-    def __init__(self, model, lr=.01, gamma=0.9):
+    def __init__(self, model, lr=LR, gamma=0.9):
         self.lr = lr
         self.gamma = gamma
         self.model = model
@@ -100,7 +104,7 @@ class Agent:
 
     def get_action(self, state):
         #random moves: tradeoff exploration / exploitation
-        self.epsilon = 80 - self.n_games #you can play around with this, the more games the smaller the epsilon
+        self.epsilon = 500 - self.n_games #you can play around with this, the more games the smaller the epsilon
         final_move = 0
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 1)
@@ -140,34 +144,36 @@ for i in range(1000):
 
     agent.remember(state_old, action, reward, state_new, done)
 
+    agent.n_games += 1
+
     if terminated or truncated:
         done = True
         observation, info = env.reset()
         continue
 
 
-# env = gym.make('Blackjack-v1', natural=False, sab=False)
-# observation, info = env.reset()
-# done = False
-# num_games = 0
-# num_wins = 0
-# num_losses = 0
-# num_draws = 0
-# for i in range(100):
-#     action = agent.get_action(observation)
-#     observation, reward, terminated, truncated, info = env.step(action)
-#     if terminated or truncated:
-#         if reward == -1:
-#             num_losses += 1
-#         elif reward == 1:
-#             num_wins += 1
-#         elif reward == 0:
-#             num_draws += 1
-#         num_games += 1
-#         done = True
-#         observation, info = env.reset()
+env = gym.make('Blackjack-v1', natural=False, sab=False)
+observation, info = env.reset()
+done = False
+num_games = 0
+num_wins = 0
+num_losses = 0
+num_draws = 0
+for i in range(1000):
+    action = agent.get_action(observation)
+    observation, reward, terminated, truncated, info = env.step(action)
+    if terminated or truncated:
+        if reward == -1:
+            num_losses += 1
+        elif reward == 1:
+            num_wins += 1
+        elif reward == 0:
+            num_draws += 1
+        num_games += 1
+        done = True
+        observation, info = env.reset()
 
-# print("Wins: " + str(num_wins) + " | Losses: " + str(num_losses) + " | Draws: " + str(num_draws))
+print("Wins: " + str(num_wins) + " | Losses: " + str(num_losses) + " | Draws: " + str(num_draws))
 
 # 64 hidden layers: Wins: 28 | Losses: 54 | Draws: 6
 # 16: Wins: 36 | Losses: 55 | Draws: 2
@@ -176,39 +182,39 @@ for i in range(1000):
 # 1: Wins: 24 | Losses: 61 | Draws: 
 
 
-print('testing now')
-env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode="human")
-observation, info = env.reset()
-done = False
-num_games = 0
-num_wins = 0
-num_losses = 0
-num_draws = 0
-for i in range(100):
-    env.render()
-    time.sleep(2)
-    action = agent.get_action(observation)
-    if action == 0:
-        print("spoingus stuck")
-    elif action == 1:
-        print("spoingus hit dat")
-    observation, reward, terminated, truncated, info = env.step(action)
-    if terminated or truncated:
-        if reward == -1:
-            print("spoingus lost")
-            num_losses += 1
-        elif reward == 1:
-            print("SPOINGUS HIT THE BIG WIN")
-            num_wins += 1
-        elif reward == 0:
-            print("Draw :/")
-            num_draws += 1
-        time.sleep(3)
-        num_games += 1
-        print("game " + str(num_games) + " ended")
-        print("Dubs: " + str(num_wins) + " | Ls: " + str(num_losses) + " | Draws: " + str(num_draws))
-        done = True
-        observation, info = env.reset()
+# print('testing now')
+# env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode="human")
+# observation, info = env.reset()
+# done = False
+# num_games = 0
+# num_wins = 0
+# num_losses = 0
+# num_draws = 0
+# for i in range(100):
+#     env.render()
+#     time.sleep(2)
+#     action = agent.get_action(observation)
+#     if action == 0:
+#         print("spoingus stuck")
+#     elif action == 1:
+#         print("spoingus hit dat")
+#     observation, reward, terminated, truncated, info = env.step(action)
+#     if terminated or truncated:
+#         if reward == -1:
+#             print("spoingus lost")
+#             num_losses += 1
+#         elif reward == 1:
+#             print("SPOINGUS HIT THE BIG WIN")
+#             num_wins += 1
+#         elif reward == 0:
+#             print("Draw :/")
+#             num_draws += 1
+#         time.sleep(3)
+#         num_games += 1
+#         print("game " + str(num_games) + " ended")
+#         print("Dubs: " + str(num_wins) + " | Ls: " + str(num_losses) + " | Draws: " + str(num_draws))
+#         done = True
+#         observation, info = env.reset()
 
 
 
